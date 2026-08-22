@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information and statistical counters.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user ID from Firebase Authentication." },
+        "name": { "type": "string", "description": "The user's display name." },
+        "email": { "type": "string", "description": "The user's email address." },
+        "photoURL": { "type": "string", "description": "The URL of the user's avatar image." },
+        "createdAt": { "type": "integer", "description": "Epoch timestamp of profile creation." },
+        "lastLogin": { "type": "integer", "description": "Epoch timestamp of last login." },
+        "totalUploads": { "type": "integer", "description": "Total count of uploaded datasets." },
+        "totalReports": { "type": "integer", "description": "Total count of AI reports generated." }
+      },
+      "required": ["uid", "name", "email", "createdAt", "lastLogin"]
+    },
+    "DatasetAnalysis": {
+      "title": "DatasetAnalysis",
+      "description": "Information, metadata, samples, and AI insights generated for a dataset.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique dataset analysis session ID." },
+        "userId": { "type": "string", "description": "The UID of the user who uploaded the dataset." },
+        "fileName": { "type": "string", "description": "Name of the uploaded file." },
+        "fileSize": { "type": "integer", "description": "Size of the file in bytes." },
+        "uploadTime": { "type": "integer", "description": "Epoch timestamp of dataset upload." },
+        "rowCount": { "type": "integer", "description": "Number of rows in the dataset." },
+        "columnCount": { "type": "integer", "description": "Number of columns in the dataset." },
+        "columns": { "type": "array", "description": "Metadata for each column." },
+        "primaryKey": { "type": "string", "description": "Guessed primary key column of the dataset." },
+        "missingPercentage": { "type": "number", "description": "Overall missing values percentage." },
+        "duplicateCount": { "type": "integer", "description": "Number of duplicated rows." },
+        "dataQualityScore": { "type": "number", "description": "Calculated score for data quality (0 to 100)." },
+        "rawSample": { "type": "array", "description": "A sample of raw data rows." },
+        "cleanedSample": { "type": "array", "description": "A sample of cleaned data rows." },
+        "hasBeenCleaned": { "type": "boolean", "description": "Whether the dataset has gone through the cleaning phase." },
+        "aiSummary": { "type": "object", "description": "The structured AI insights summary object." },
+        "anomalies": { "type": "array", "description": "List of anomalies identified in the data." },
+        "predictions": { "type": "array", "description": "List of prediction items." },
+        "isFavorite": { "type": "boolean", "description": "Whether this analysis has been marked as a favorite." },
+        "isShared": { "type": "boolean", "description": "Whether this analysis is shared publicly." }
+      },
+      "required": ["id", "userId", "fileName", "fileSize", "uploadTime", "rowCount", "columnCount", "columns", "primaryKey", "missingPercentage", "duplicateCount", "dataQualityScore", "rawSample", "hasBeenCleaned"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection storing registered user profile credentials and statistics."
+    },
+    "analyses/{analysisId}": {
+      "schema": "DatasetAnalysis",
+      "description": "Collection storing the metadata, results, and generated insights for datasets."
+    }
+  }
+}

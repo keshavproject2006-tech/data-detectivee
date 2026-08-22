@@ -1,0 +1,6 @@
+{
+  "name": "AI Data Detective",
+  "description": "An intelligent enterprise analytics platform that allows users to upload datasets (CSV, Excel, JSON) to instantly generate AI insights, automated visual charts, anomaly detection, predictive analytics, and conversational data exploration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (default-deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reuseable global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true || 
+        request.auth.token.firebase.sign_in_provider == 'password'
+      );
+    }
+
+    // User Profile helpers
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() <= 128
+        && data.name is string && data.name.size() <= 128
+        && data.email is string && data.email.size() <= 128
+        && data.photoURL is string && data.photoURL.size() <= 1024
+        && data.createdAt is int
+        && data.lastLogin is int
+        && (!('totalUploads' in data) || data.totalUploads is int)
+        && (!('totalReports' in data) || data.totalReports is int);
+    }
+
+    // Dataset Analysis helpers
+    function hasRequiredAnalysisFields(data) {
+      return data.keys().hasAll([
+        'id', 'userId', 'fileName', 'fileSize', 'uploadTime', 'rowCount', 
+        'columnCount', 'columns', 'primaryKey', 'missingPercentage', 
+        'duplicateCount', 'dataQualityScore', 'rawSample', 'hasBeenCleaned'
+      ]);
+    }
+
+    function isValidAnalysis(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.fileName is string && data.fileName.size() <= 256
+        && data.fileSize is int
+        && data.uploadTime is int
+        && data.rowCount is int
+        && data.columnCount is int
+        && data.columns is list
+        && data.primaryKey is string && data.primaryKey.size() <= 128
+        && (data.missingPercentage is float || data.missingPercentage is int)
+        && data.duplicateCount is int
+        && (data.dataQualityScore is float || data.dataQualityScore is int)
+        && data.rawSample is list
+        && data.hasBeenCleaned is bool
+        && (!('cleanedSample' in data) || data.cleanedSample is list)
+        && (!('aiSummary' in data) || data.aiSummary is map)
+        && (!('anomalies' in data) || data.anomalies is list)
+        && (!('predictions' in data) || data.predictions is list)
+        && (!('isFavorite' in data) || data.isFavorite is bool)
+        && (!('isShared' in data) || data.isShared is bool);
+    }
+
+    // Rules for User profiles
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isVerifiedUser() && incoming().uid == userId && isValidUser(incoming());
+      allow update: if isOwner(userId) && isVerifiedUser() && incoming().uid == userId && isValidUser(incoming());
+      allow delete: if false;
+    }
+
+    // Rules for Dataset analyses
+    match /analyses/{analysisId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.isShared == true);
+      allow create: if isSignedIn() 
+                    && isVerifiedUser()
+                    && incoming().userId == request.auth.uid
+                    && hasRequiredAnalysisFields(incoming())
+                    && isValidAnalysis(incoming());
+      allow update: if isSignedIn()
+                    && isVerifiedUser()
+                    && existing().userId == request.auth.uid
+                    && incoming().userId == request.auth.uid
+                    && incoming().id == existing().id
+                    && isValidAnalysis(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Context-aware utility helper getters
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+  }
+}
